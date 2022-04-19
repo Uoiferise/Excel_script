@@ -3,9 +3,10 @@ import os
 import openpyxl
 from openpyxl.styles import NamedStyle, Font, Border, Side, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
+from operator import add
 
 # Столбцы, которые переносятся в итоговый файл без изменения
-column_indexes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 16, 17, 19, 20, 22, 23, 25, 26]
+column_indexes = (1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 16, 17, 19, 20, 22, 23, 25, 26)
 
 # Данные из ОТК, которые необходимо сопоставить с итоговым файлом
 otk_book = openpyxl.load_workbook('data/otk.xlsx', data_only=True)
@@ -15,17 +16,17 @@ for r in range(1, 250):
     otk_dict[otk_sheet.cell(row=r, column=1).value] = otk_sheet.cell(row=r, column=2).value
 
 file_folder_path_dict = {
-    # 'abutments': ['abutments_info.xlsx', 'abutments_unsh.xlsx', 'Абатменты'],
-    # 'abutments_fired': ['abutments_fired_info.xlsx', 'abutments_fired_unsh.xlsx', 'Абатменты_выжигаемые'],
-    'analog': ['analog_info.xlsx', 'analog_unsh.xlsx', 'Аналоги'],
-    # 'blanks': ['blanks_info.xlsx', 'blanks_unsh.xlsx', 'Заготовки'],
-    # 'formers': ['formers_info.xlsx', 'formers_unsh.xlsx', 'Формирователи'],
-    # 'implants': ['implants_info.xlsx', 'implants_stock.xlsx', 'Импланты'],
-    # 'scan_body': ['scan_body_info.xlsx', 'scan_body_unsh.xlsx', 'Скан_боди'],
-    # 'screws': ['screws_info.xlsx', 'screws_unsh.xlsx', 'Винты'],
-    # 'sleeve': ['sleeve_info.xlsx', 'sleeve_unsh.xlsx', 'Втулка'],
-    # 'titanium_base': ['titanium_base_info.xlsx', 'titanium_base_unsh.xlsx', 'Титановые_основы'],
-    # 'transfers': ['transfers_info.xlsx', 'transfers_unsh.xlsx', 'Трансферы'],
+    # 'abutments': ('abutments_info.xlsx', 'abutments_unsh.xlsx', 'Абатменты'),
+    # 'abutments_fired': ('abutments_fired_info.xlsx', 'abutments_fired_unsh.xlsx', 'Абатменты_выжигаемые'),
+    # 'analog': ('analog_info.xlsx', 'analog_unsh.xlsx', 'Аналоги'),
+    # 'blanks': ('blanks_info.xlsx', 'blanks_unsh.xlsx', 'Заготовки'),
+    # 'formers': ('formers_info.xlsx', 'formers_unsh.xlsx', 'Формирователи'),
+    # 'implants': ('implants_info.xlsx', 'implants_stock.xlsx', 'Импланты'),
+    # 'scan_body': ('scan_body_info.xlsx', 'scan_body_unsh.xlsx', 'Скан_боди'),
+    # 'screws': ('screws_info.xlsx', 'screws_unsh.xlsx', 'Винты'),
+    # 'sleeve': ('sleeve_info.xlsx', 'sleeve_unsh.xlsx', 'Втулка'),
+    'titanium_base': ('titanium_base_info.xlsx', 'titanium_base_unsh.xlsx', 'Титановые_основы'),
+    'transfers': ('transfers_info.xlsx', 'transfers_unsh.xlsx', 'Трансферы'),
 }
 
 
@@ -97,6 +98,88 @@ def read_input_files(main_file, unshipped_file):
     for row in range(4, input_sheet.max_row + 1):
         if input_sheet.cell(row=row, column=6).value != 'Да' and input_sheet.cell(row=row, column=7).value != 'Да':
             row_indexes.append(row)
+
+    # Отбор арх. поз. titanium_base, которые надо учесть
+    if main_file == 'data/titanium_base/titanium_base_info.xlsx':
+        tb_actual_book = openpyxl.load_workbook('data/titanium_base/titanium_base_actual.xlsx')
+        tb_actual_sheet = tb_actual_book.active
+        tb_actual_dict = {}
+        for r in range(2, 20):
+            tb_actual_dict[tb_actual_sheet.cell(row=r, column=1).value] = \
+                tb_actual_dict.get(tb_actual_sheet.cell(row=r, column=1).value, []) + \
+                [tb_actual_sheet.cell(row=r, column=2).value]
+
+        global tb_ar_dict
+        tb_ar_dict = {}
+        for row in range(4, input_sheet.max_row + 1):
+            if input_sheet.cell(row=row, column=5).value in list(tb_actual_dict.values())[0]:
+                info = []
+                for col in (9, 12, 16, 17, 19, 20, 22, 23, 25, 26):
+                    if input_sheet.cell(row=row, column=col).value is None:
+                        x = 0
+                    else:
+                        x = int(input_sheet.cell(row=row, column=col).value)
+                    info.append(x)
+
+                tb_ar_dict[list(tb_actual_dict.keys())[0]] = \
+                    list(
+                        map(
+                            add,
+                            tb_ar_dict.get(list(tb_actual_dict.keys())[0], [0 for _ in range(10)]),
+                            info
+                        )
+                    )
+            elif input_sheet.cell(row=row, column=5).value in list(tb_actual_dict.values())[1]:
+                info = []
+                for col in (9, 12, 16, 17, 19, 20, 22, 23, 25, 26):
+                    if input_sheet.cell(row=row, column=col).value is None:
+                        x = 0
+                    else:
+                        x = int(input_sheet.cell(row=row, column=col).value)
+                    info.append(x)
+
+                tb_ar_dict[list(tb_actual_dict.keys())[1]] = \
+                    list(
+                        map(
+                            add,
+                            tb_ar_dict.get(list(tb_actual_dict.keys())[1], [0 for _ in range(10)]),
+                            info
+                        )
+                    )
+            elif input_sheet.cell(row=row, column=5).value in list(tb_actual_dict.values())[2]:
+                info = []
+                for col in (9, 12, 16, 17, 19, 20, 22, 23, 25, 26):
+                    if input_sheet.cell(row=row, column=col).value is None:
+                        x = 0
+                    else:
+                        x = int(input_sheet.cell(row=row, column=col).value)
+                    info.append(x)
+
+                tb_ar_dict[list(tb_actual_dict.keys())[2]] = \
+                    list(
+                        map(
+                            add,
+                            tb_ar_dict.get(list(tb_actual_dict.keys())[2], [0 for _ in range(10)]),
+                            info
+                        )
+                    )
+            elif input_sheet.cell(row=row, column=5).value in list(tb_actual_dict.values())[3]:
+                info = []
+                for col in (9, 12, 16, 17, 19, 20, 22, 23, 25, 26):
+                    if input_sheet.cell(row=row, column=col).value is None:
+                        x = 0
+                    else:
+                        x = int(input_sheet.cell(row=row, column=col).value)
+                    info.append(x)
+
+                tb_ar_dict[list(tb_actual_dict.keys())[3]] = \
+                    list(
+                        map(
+                            add,
+                            tb_ar_dict.get(list(tb_actual_dict.keys())[3], [0 for _ in range(10)]),
+                            info
+                        )
+                    )
 
     # Дополнительный исключения номенклатур
     row_indexes_copy = row_indexes.copy()
@@ -837,8 +920,20 @@ def create_output_file(output_name='unnamed'):
         r4 += 1
 
         for row in row_indexes_list[5]:
-            if '38727СБН-2к' in output_sheet.cell(row=row, column=5).value:
-                continue
+            if output_sheet.cell(row=row, column=5).value in tb_ar_dict.keys():
+                for col in range(1, 23):
+                    if (1 <= col <= 8) or (19 <= col <= 22):
+                        cell = output_book['GEO Bell'].cell(row=r4, column=col)
+                        info = output_sheet.cell(row=row, column=col).value
+                        cell.value = info
+                        cell_style(cell=cell, column=col)
+                    else:
+                        cell = output_book['GEO Bell'].cell(row=r4, column=col)
+                        info = output_sheet.cell(row=row, column=col).value + \
+                               tb_ar_dict[output_sheet.cell(row=row, column=5).value][col-9]
+                        cell.value = info
+                        cell_style(cell=cell, column=col)
+                r4 += 1
             else:
                 for col in range(1, 23):
                     cell = output_book['GEO Bell'].cell(row=r4, column=col)
@@ -859,12 +954,27 @@ def create_output_file(output_name='unnamed'):
         r4 += 1
 
         for row in row_indexes_list[6]:
-            for col in range(1, 23):
-                cell = output_book['GEO Bell'].cell(row=r4, column=col)
-                info = output_sheet.cell(row=row, column=col).value
-                cell.value = info
-                cell_style(cell=cell, column=col)
-            r4 += 1
+            if output_sheet.cell(row=row, column=5).value in tb_ar_dict.keys():
+                for col in range(1, 23):
+                    if (1 <= col <= 8) or (19 <= col <= 22):
+                        cell = output_book['GEO Bell'].cell(row=r4, column=col)
+                        info = output_sheet.cell(row=row, column=col).value
+                        cell.value = info
+                        cell_style(cell=cell, column=col)
+                    else:
+                        cell = output_book['GEO Bell'].cell(row=r4, column=col)
+                        info = output_sheet.cell(row=row, column=col).value + \
+                               tb_ar_dict[output_sheet.cell(row=row, column=5).value][col-9]
+                        cell.value = info
+                        cell_style(cell=cell, column=col)
+                r4 += 1
+            else:
+                for col in range(1, 23):
+                    cell = output_book['GEO Bell'].cell(row=r4, column=col)
+                    info = output_sheet.cell(row=row, column=col).value
+                    cell.value = info
+                    cell_style(cell=cell, column=col)
+                r4 += 1
 
         for row in row_indexes_list[7]:
             for col in range(1, 23):
@@ -1070,7 +1180,7 @@ def create_output_file(output_name='unnamed'):
 def main():
     global date_start, date_stop
     # date_start, date_stop = input('Начало периода: '), input('Конец периода: ')
-    date_start, date_stop = '12.03.2022', '13.04.2022'
+    date_start, date_stop = '19.03.2022', '20.04.2022'
 
     for key, value in file_folder_path_dict.items():
         read_input_files(main_file=f'data/{key}/{value[0]}',
