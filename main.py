@@ -16,15 +16,15 @@ for r in range(1, 250):
     otk_dict[otk_sheet.cell(row=r, column=1).value] = otk_sheet.cell(row=r, column=2).value
 
 file_folder_path_dict = {
-    # 'abutments': ('abutments_info.xlsx', 'abutments_unsh.xlsx', 'Абатменты'),
-    # 'abutments_fired': ('abutments_fired_info.xlsx', 'abutments_fired_unsh.xlsx', 'Абатменты_выжигаемые'),
-    # 'analog': ('analog_info.xlsx', 'analog_unsh.xlsx', 'Аналоги'),
-    # 'blanks': ('blanks_info.xlsx', 'blanks_unsh.xlsx', 'Заготовки'),
-    # 'formers': ('formers_info.xlsx', 'formers_unsh.xlsx', 'Формирователи'),
-    # 'implants': ('implants_info.xlsx', 'implants_stock.xlsx', 'Импланты'),
-    # 'scan_body': ('scan_body_info.xlsx', 'scan_body_unsh.xlsx', 'Скан_боди'),
-    # 'screws': ('screws_info.xlsx', 'screws_unsh.xlsx', 'Винты'),
-    # 'sleeve': ('sleeve_info.xlsx', 'sleeve_unsh.xlsx', 'Втулка'),
+    'abutments': ('abutments_info.xlsx', 'abutments_unsh.xlsx', 'Абатменты'),
+    'abutments_fired': ('abutments_fired_info.xlsx', 'abutments_fired_unsh.xlsx', 'Абатменты_выжигаемые'),
+    'analog': ('analog_info.xlsx', 'analog_unsh.xlsx', 'Аналоги'),
+    'blanks': ('blanks_info.xlsx', 'blanks_unsh.xlsx', 'Заготовки'),
+    'formers': ('formers_info.xlsx', 'formers_unsh.xlsx', 'Формирователи'),
+    'implants': ('implants_info.xlsx', 'implants_stock.xlsx', 'Импланты'),
+    'scan_body': ('scan_body_info.xlsx', 'scan_body_unsh.xlsx', 'Скан_боди'),
+    'screws': ('screws_info.xlsx', 'screws_unsh.xlsx', 'Винты'),
+    'sleeve': ('sleeve_info.xlsx', 'sleeve_unsh.xlsx', 'Втулка'),
     'titanium_base': ('titanium_base_info.xlsx', 'titanium_base_unsh.xlsx', 'Титановые_основы'),
     'transfers': ('transfers_info.xlsx', 'transfers_unsh.xlsx', 'Трансферы'),
 }
@@ -371,7 +371,7 @@ def create_sheet_result(sheet_name, start_row, end_row):
             cell.number_format = '# ##0'
 
 
-def separation_nomenclatures(sheet_name, start_row):
+def separation_nomenclatures(sheet_name, start_row, exception=False):
     # Будем разделять номенклатуры по их линейке, а также объединять пары с одинаковыми размерами в жирные границы
     thin = Side(border_style="thin", color="000000")
     medium = Side(border_style="medium", color="000000")
@@ -391,62 +391,64 @@ def separation_nomenclatures(sheet_name, start_row):
                 cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
             else:
                 cell.fill = PatternFill("solid", fgColor="FFFFFF")
-
-    border_highlighting_list = []
-    for i in enumerate(row_indexes_for_new_line):
-        flag = True
-        for row in range(start_row, i[1] + i[0] - 1):
-            if flag:
-                if sheet_name.cell(row=row, column=4).value == sheet_name.cell(row=(row + 1), column=4).value:
-                    continue
-                else:
-                    flag = False
-                    stop_row = row
-                    border_highlighting_list.append([start_row, stop_row])
-                    start_row = row + 1
-            else:
-                if sheet_name.cell(row=row, column=4).value == sheet_name.cell(row=(row + 1), column=4).value and\
-                        sheet_name.cell(row=(row + 2), column=4).value is not None:
-                    continue
-                elif sheet_name.cell(row=row, column=4).value == sheet_name.cell(row=(row + 1), column=4).value and\
-                        sheet_name.cell(row=(row + 2), column=4).value is None:
-                    flag = True
-                    stop_row = row + 1
-                    border_highlighting_list.append([start_row, stop_row])
-                    start_row = row + 1
-                else:
-                    stop_row = row
-                    border_highlighting_list.append([start_row, stop_row])
-                    start_row = row + 1
-        start_row = i[1] + i[0] + 1
-
-    # Закрашиваем границы отобранных ячеек
-    for item in border_highlighting_list:
-        if (item[-1] - item[0]) >= 1:
-            for row in range(item[0], item[1] + 1):
-                for col in range(5, 11):
-                    cell = sheet_name.cell(row=row, column=col)
-                    if row == item[0]:
-                        if col == 5:
-                            cell.border = Border(top=medium, left=medium, right=thin, bottom=thin)
-                        elif col == 10:
-                            cell.border = Border(top=medium, left=thin, right=medium, bottom=thin)
-                        else:
-                            cell.border = Border(top=medium, left=thin, right=thin, bottom=thin)
-                    elif row == item[1]:
-                        if col == 5:
-                            cell.border = Border(top=thin, left=medium, right=thin, bottom=medium)
-                        elif col == 10:
-                            cell.border = Border(top=thin, left=thin, right=medium, bottom=medium)
-                        else:
-                            cell.border = Border(top=thin, left=thin, right=thin, bottom=medium)
+    if exception:
+        sheet_name.column_dimensions.group('A', 'D', hidden=True)
+    else:
+        border_highlighting_list = []
+        for i in enumerate(row_indexes_for_new_line):
+            flag = True
+            for row in range(start_row, i[1] + i[0] - 1):
+                if flag:
+                    if sheet_name.cell(row=row, column=4).value == sheet_name.cell(row=(row + 1), column=4).value:
+                        continue
                     else:
-                        if col == 5:
-                            cell.border = Border(top=thin, left=medium, right=thin, bottom=thin)
-                        elif col == 10:
-                            cell.border = Border(top=thin, left=thin, right=medium, bottom=thin)
+                        flag = False
+                        stop_row = row
+                        border_highlighting_list.append([start_row, stop_row])
+                        start_row = row + 1
+                else:
+                    if sheet_name.cell(row=row, column=4).value == sheet_name.cell(row=(row + 1), column=4).value and\
+                            sheet_name.cell(row=(row + 2), column=4).value is not None:
+                        continue
+                    elif sheet_name.cell(row=row, column=4).value == sheet_name.cell(row=(row + 1), column=4).value and\
+                            sheet_name.cell(row=(row + 2), column=4).value is None:
+                        flag = True
+                        stop_row = row + 1
+                        border_highlighting_list.append([start_row, stop_row])
+                        start_row = row + 1
+                    else:
+                        stop_row = row
+                        border_highlighting_list.append([start_row, stop_row])
+                        start_row = row + 1
+            start_row = i[1] + i[0] + 1
 
-    sheet_name.column_dimensions.group('A', 'D', hidden=True)
+        # Закрашиваем границы отобранных ячеек
+        for item in border_highlighting_list:
+            if (item[-1] - item[0]) >= 1:
+                for row in range(item[0], item[1] + 1):
+                    for col in range(5, 11):
+                        cell = sheet_name.cell(row=row, column=col)
+                        if row == item[0]:
+                            if col == 5:
+                                cell.border = Border(top=medium, left=medium, right=thin, bottom=thin)
+                            elif col == 10:
+                                cell.border = Border(top=medium, left=thin, right=medium, bottom=thin)
+                            else:
+                                cell.border = Border(top=medium, left=thin, right=thin, bottom=thin)
+                        elif row == item[1]:
+                            if col == 5:
+                                cell.border = Border(top=thin, left=medium, right=thin, bottom=medium)
+                            elif col == 10:
+                                cell.border = Border(top=thin, left=thin, right=medium, bottom=medium)
+                            else:
+                                cell.border = Border(top=thin, left=thin, right=thin, bottom=medium)
+                        else:
+                            if col == 5:
+                                cell.border = Border(top=thin, left=medium, right=thin, bottom=thin)
+                            elif col == 10:
+                                cell.border = Border(top=thin, left=thin, right=medium, bottom=thin)
+
+        sheet_name.column_dimensions.group('A', 'D', hidden=True)
 
 
 def cell_style(cell, column):
@@ -546,7 +548,7 @@ def create_output_file(output_name='unnamed'):
     # Выделение цветом номенклатур с маленьким запасом
     fill_small_stock(sheet_name=output_sheet, start_row=start_row)
 
-    # Разнесение информации по разным листам итогового файла
+    # Разнесение информации по разным листам итогового файла и дополнительная стилизация
     if output_name == 'abutments':
         sheet_names_list = [
             'Прямой, временный',
@@ -711,10 +713,18 @@ def create_output_file(output_name='unnamed'):
 
         p_dict = {}
         for row in row_indexes_list[0]:
-            if 'P' in output_sheet.cell(row=row, column=8).value:
+            if 'P' in output_sheet.cell(row=row, column=8).value or \
+                    'Н' in output_sheet.cell(row=row, column=8).value:
                 p_dict[(output_sheet.cell(row=row, column=5).value.split()[0][:6],
                         output_sheet.cell(row=row, column=8).value[:-2])] = \
-                    [output_sheet.cell(row=row, column=col).value for col in range(9, 19)]
+                    list(
+                        map(
+                            add,
+                            p_dict.get((output_sheet.cell(row=row, column=5).value.split()[0][:6],
+                                        output_sheet.cell(row=row, column=8).value[:-2]), [0 for _ in range(10)]),
+                            [output_sheet.cell(row=row, column=col).value for col in range(9, 19)]
+                        )
+                    )
 
         cell = output_book['Patch'].cell(row=r1, column=5)
         cell.value = 'Мостовидные'
@@ -728,7 +738,8 @@ def create_output_file(output_name='unnamed'):
         r1 += 1
 
         for row in row_indexes_list[0]:
-            if 'P' in output_sheet.cell(row=row, column=8).value:
+            if 'P' in output_sheet.cell(row=row, column=8).value or \
+                    'Н' in output_sheet.cell(row=row, column=8).value:
                 continue
             elif p_dict.get((output_sheet.cell(row=row, column=5).value.split()[0][:6],
                              output_sheet.cell(row=row, column=8).value), 0) != 0:
@@ -764,13 +775,22 @@ def create_output_file(output_name='unnamed'):
 
         p_dict = {}
         for row in row_indexes_list[1]:
-            if 'P' in output_sheet.cell(row=row, column=8).value:
+            if 'P' in output_sheet.cell(row=row, column=8).value or \
+                    'Н' in output_sheet.cell(row=row, column=8).value:
                 p_dict[(output_sheet.cell(row=row, column=5).value.split()[0][:6],
                         output_sheet.cell(row=row, column=8).value[:-2])] = \
-                    [output_sheet.cell(row=row, column=col).value for col in range(9, 19)]
+                    list(
+                        map(
+                            add,
+                            p_dict.get((output_sheet.cell(row=row, column=5).value.split()[0][:6],
+                                        output_sheet.cell(row=row, column=8).value[:-2]), [0 for _ in range(10)]),
+                            [output_sheet.cell(row=row, column=col).value for col in range(9, 19)]
+                        )
+                    )
 
         for row in row_indexes_list[1]:
-            if 'P' in output_sheet.cell(row=row, column=8).value:
+            if 'P' in output_sheet.cell(row=row, column=8).value or \
+                    'Н' in output_sheet.cell(row=row, column=8).value:
                 continue
             elif p_dict.get((output_sheet.cell(row=row, column=5).value.split()[0][:6],
                              output_sheet.cell(row=row, column=8).value), 0) != 0:
@@ -879,13 +899,22 @@ def create_output_file(output_name='unnamed'):
 
         p_dict = {}
         for row in row_indexes_list[4]:
-            if 'P' in output_sheet.cell(row=row, column=8).value:
+            if 'P' in output_sheet.cell(row=row, column=8).value or \
+                    'Н' in output_sheet.cell(row=row, column=8).value:
                 p_dict[(output_sheet.cell(row=row, column=5).value.split()[0][:6],
                         output_sheet.cell(row=row, column=8).value[:-2])] = \
-                    [output_sheet.cell(row=row, column=col).value for col in range(9, 19)]
+                    list(
+                        map(
+                            add,
+                            p_dict.get((output_sheet.cell(row=row, column=5).value.split()[0][:6],
+                                        output_sheet.cell(row=row, column=8).value[:-2]), [0 for _ in range(10)]),
+                            [output_sheet.cell(row=row, column=col).value for col in range(9, 19)]
+                        )
+                    )
 
         for row in row_indexes_list[4]:
-            if 'P' in output_sheet.cell(row=row, column=8).value:
+            if 'P' in output_sheet.cell(row=row, column=8).value or \
+                    'Н' in output_sheet.cell(row=row, column=8).value:
                 continue
             elif p_dict.get((output_sheet.cell(row=row, column=5).value.split()[0],
                              output_sheet.cell(row=row, column=8).value), 0) != 0:
@@ -1163,10 +1192,170 @@ def create_output_file(output_name='unnamed'):
                 if cell.value.split()[0][:5] in green_list:
                     cell.fill = PatternFill("solid", fgColor="CCFFCC")
     elif output_name == 'analog':
+        separation_nomenclatures(sheet_name=output_sheet, start_row=start_row, exception=True)
+
+        matching_book = openpyxl.load_workbook('data/analog/analog_matching.xlsx', data_only=True)
+        matching_sheet = matching_book.active
+        matching_dict = {}
+        for row in range(2, matching_sheet.max_row + 1):
+            key = str(matching_sheet.cell(row=row, column=1).value)
+            value = (
+                matching_sheet.cell(row=row, column=3).value,
+                matching_sheet.cell(row=row, column=5).value
+            )
+            matching_dict[key] = value
+
+        thin = Side(border_style="thin", color="000000")
+        medium = Side(border_style="medium", color="000000")
+
         create_sheet_result(sheet_name=output_sheet,
                             start_row=start_row,
-                            end_row=output_sheet.max_row+1)
-        output_sheet.column_dimensions.group('A', 'D', hidden=True)
+                            end_row=output_sheet.max_row)
+        row = 7
+        while output_sheet.cell(row=row, column=5).value != "Итого":
+            if output_sheet.cell(row=row, column=5).value is None:
+                row += 1
+                continue
+
+            key = output_sheet.cell(row=row, column=5).value.split()[0]
+            if matching_dict.get(key, False):
+                if output_sheet.cell(row=row + 1, column=5).value == matching_dict[key][0]:
+                    if output_sheet.cell(row=row + 2, column=5).value == matching_dict[key][1]:
+                        for i in range(3):
+                            for col in range(5, 11):
+                                cell = output_sheet.cell(row=row + i, column=col)
+                                if i == 0:
+                                    if col == 5:
+                                        cell.border = Border(top=medium, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=medium, left=thin, right=medium, bottom=thin)
+                                    else:
+                                        cell.border = Border(top=medium, left=thin, right=thin, bottom=thin)
+                                elif i == 2:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=medium)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=medium)
+                                    else:
+                                        cell.border = Border(top=thin, left=thin, right=thin, bottom=medium)
+                                else:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=thin)
+                        row += 3
+                    else:
+                        output_sheet.insert_rows(idx=row + 2)
+                        output_sheet.cell(row=row + 2, column=5).value = matching_dict[key][1]
+                        output_sheet.cell(row=row + 2, column=5).font = Font(name='Arial', bold=False, size=8)
+
+                        for col in range(1, output_sheet.max_column + 1):
+                            cell = output_sheet.cell(row=row + 2, column=col)
+                            if col != 20 and col != 21:
+                                cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+                            else:
+                                cell.fill = PatternFill("solid", fgColor="FFFFFF")
+
+                        for i in range(3):
+                            for col in range(5, 11):
+                                cell = output_sheet.cell(row=row + i, column=col)
+                                if i == 0:
+                                    if col == 5:
+                                        cell.border = Border(top=medium, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=medium, left=thin, right=medium, bottom=thin)
+                                    else:
+                                        cell.border = Border(top=medium, left=thin, right=thin, bottom=thin)
+                                elif i == 2:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=medium)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=medium)
+                                    else:
+                                        cell.border = Border(top=thin, left=thin, right=thin, bottom=medium)
+                                else:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=thin)
+                        row += 3
+                else:
+                    output_sheet.insert_rows(idx=row + 1)
+                    output_sheet.cell(row=row + 1, column=5).value = matching_dict[key][0]
+                    output_sheet.cell(row=row + 1, column=5).font = Font(name='Arial', bold=False, size=8)
+
+                    for col in range(1, output_sheet.max_column + 1):
+                        cell = output_sheet.cell(row=row + 1, column=col)
+                        if col != 20 and col != 21:
+                            cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+                        else:
+                            cell.fill = PatternFill("solid", fgColor="FFFFFF")
+
+                    if output_sheet.cell(row=row + 2, column=5).value == matching_dict[key][1]:
+                        for i in range(3):
+                            for col in range(5, 11):
+                                cell = output_sheet.cell(row=row + i, column=col)
+                                if i == 0:
+                                    if col == 5:
+                                        cell.border = Border(top=medium, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=medium, left=thin, right=medium, bottom=thin)
+                                    else:
+                                        cell.border = Border(top=medium, left=thin, right=thin, bottom=thin)
+                                elif i == 2:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=medium)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=medium)
+                                    else:
+                                        cell.border = Border(top=thin, left=thin, right=thin, bottom=medium)
+                                else:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=thin)
+                        row += 3
+                    else:
+                        output_sheet.insert_rows(idx=row + 2)
+                        output_sheet.cell(row=row + 2, column=5).value = matching_dict[key][1]
+                        output_sheet.cell(row=row + 2, column=5).font = Font(name='Arial', bold=False, size=8)
+
+                        for col in range(1, output_sheet.max_column + 1):
+                            cell = output_sheet.cell(row=row + 2, column=col)
+                            if col != 20 and col != 21:
+                                cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+                            else:
+                                cell.fill = PatternFill("solid", fgColor="FFFFFF")
+
+                        for i in range(3):
+                            for col in range(5, 11):
+                                cell = output_sheet.cell(row=row + i, column=col)
+                                if i == 0:
+                                    if col == 5:
+                                        cell.border = Border(top=medium, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=medium, left=thin, right=medium, bottom=thin)
+                                    else:
+                                        cell.border = Border(top=medium, left=thin, right=thin, bottom=thin)
+                                elif i == 2:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=medium)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=medium)
+                                    else:
+                                        cell.border = Border(top=thin, left=thin, right=thin, bottom=medium)
+                                else:
+                                    if col == 5:
+                                        cell.border = Border(top=thin, left=medium, right=thin, bottom=thin)
+                                    elif col == 10:
+                                        cell.border = Border(top=thin, left=thin, right=medium, bottom=thin)
+                        row += 3
+            else:
+                row += 1
+
+        create_sheet_result(sheet_name=output_sheet,
+                            start_row=start_row,
+                            end_row=output_sheet.max_row)
     else:
         separation_nomenclatures(sheet_name=output_sheet, start_row=start_row)
         create_sheet_result(sheet_name=output_sheet,
@@ -1180,7 +1369,7 @@ def create_output_file(output_name='unnamed'):
 def main():
     global date_start, date_stop
     # date_start, date_stop = input('Начало периода: '), input('Конец периода: ')
-    date_start, date_stop = '19.03.2022', '20.04.2022'
+    date_start, date_stop = '03.04.2022', '04.05.2022'
 
     for key, value in file_folder_path_dict.items():
         read_input_files(main_file=f'data/{key}/{value[0]}',
