@@ -34,7 +34,9 @@ def create_date_dict():
     month_dict = {
         'марта': '03',
         'апр.': '04',
-        'мая': '05'
+        'мая': '05',
+        'июня': '06',
+        'июля': '07'
     }
 
     global date_dict
@@ -211,6 +213,10 @@ def read_input_files(main_file, unshipped_file):
                 del row_indexes[row_indexes.index(row)]
             elif 'кат2' in input_sheet.cell(row=row, column=5).value.split()[0]:
                 del row_indexes[row_indexes.index(row)]
+    elif main_file == 'data/implants/implants_info.xlsx':
+        for i, row in enumerate(row_indexes_copy):
+            if input_sheet.cell(row=row, column=3).value != 'Osstem Implant':
+                del row_indexes[row_indexes.index(row)]
 
     # Создание словаря с неотгруженными номенклатурами из unshipped_file
     global unshipped_dict
@@ -221,7 +227,7 @@ def read_input_files(main_file, unshipped_file):
 
         if unshipped_sheet.max_column == 8:
             for row in range(7, unshipped_sheet.max_row + 1):
-                unshipped_dict[unshipped_sheet.cell(row=row, column=1).value] = \
+                unshipped_dict[str(unshipped_sheet.cell(row=row, column=1).value)] = \
                     int(unshipped_sheet.cell(row=row, column=8).value)
             print(f'{unshipped_file} is loaded')
         else:
@@ -237,8 +243,8 @@ def read_input_files(main_file, unshipped_file):
         stock_sheet = stock_book.active
 
         for row in range(1, stock_sheet.max_row + 1):
-            stock_dict[stock_sheet.cell(row=row, column=1).value] = \
-                stock_sheet.cell(row=row, column=2).value
+            stock_dict[str(stock_sheet.cell(row=row, column=1).value)] = \
+                int(stock_sheet.cell(row=row, column=2).value)
         print(f'{unshipped_file} is loaded')
 
     # Создание словаря с датами пр-ва
@@ -1167,7 +1173,7 @@ def create_output_file(output_name='unnamed'):
         output_sheet.cell(row=4, column=23).style = 'header'
         output_sheet.column_dimensions[get_column_letter(23)].width = 20
         for row in range(7, output_sheet.max_row+1):
-            info = stock_dict.get(int(output_sheet.cell(row=row, column=5).value.split()[0][:5]))
+            info = stock_dict.get(str(output_sheet.cell(row=row, column=5).value.split()[0]))
             cell = output_sheet.cell(row=row, column=23)
             cell.value = info
             cell.style = 'info'
@@ -1191,6 +1197,8 @@ def create_output_file(output_name='unnamed'):
             if cell.value is not None:
                 if cell.value.split()[0][:5] in green_list:
                     cell.fill = PatternFill("solid", fgColor="CCFFCC")
+
+        output_sheet.column_dimensions.group('K', 'R', hidden=True)
     elif output_name == 'analog':
         separation_nomenclatures(sheet_name=output_sheet, start_row=start_row, exception=True)
 
@@ -1364,12 +1372,13 @@ def create_output_file(output_name='unnamed'):
 
     output_book.save(f'output_files/!{file_folder_path_dict[output_name][-1]}_{date_stop[:5]}-{date_start[:5]}.xlsx')
     print(f'!{file_folder_path_dict[output_name][-1]}_{date_stop[:5]}-{date_start[:5]}.xlsx is done')
+    print()
 
 
 def main():
     global date_start, date_stop
     # date_start, date_stop = input('Начало периода: '), input('Конец периода: ')
-    date_start, date_stop = '03.04.2022', '04.05.2022'
+    date_start, date_stop = '12.06.2022', '13.07.2022'
 
     for key, value in file_folder_path_dict.items():
         read_input_files(main_file=f'data/{key}/{value[0]}',
